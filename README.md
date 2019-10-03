@@ -31,7 +31,14 @@ The zip file contains one or more .TF files with Terraform instructions.  These 
 * Computer Instance sized for Always Free running Ubuntu 16.04 with public IP address
 * Packages updated on first boot and Unifi Controller installed using [GlennR's Installation Script](https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-Ubuntu-16-04-18-04-18-10-19-04-and-19-10-/ccbc7530-dd61-40a7-82ec-22b17f027776)
 
-## Advanced Configuration
+## SSH Access to Instance
+To enable SSH to the Instance, follow the Oracle guide on [Managing Key Pair on Linux Instances](https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingkeypairs.htm?Highlight=ssh)
+
+Paste the public key into the "ssh_public_key" variable when Applying the stack or modify and existing Instance under Resources>Console Connections
+
+Additional information can be found on the Oracle Support Page under [Instance Console Connections](https://docs.cloud.oracle.com/iaas/Content/Compute/References/serialconsole.htm)
+
+## Static IP Reservation
 A static IP address can be reserved to keep the same address even if the original instance is deleted or recreated.  This is not done automatically by the Terraform file, but can configured after creation
 
 1) Navigate to Menu>Instances and select the Unifi controller instance name. (Ensure Compartment on the left side is changed to "unificontroller")
