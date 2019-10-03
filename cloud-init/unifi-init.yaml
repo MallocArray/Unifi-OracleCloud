@@ -1,0 +1,29 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+packages:
+    - jq
+runcmd:
+    - [wget, 'https://get.glennr.nl/unifi/install/install_latest/unifi-latest.sh']
+    - [chmod, +x, unifi-latest.sh]
+    - [./unifi-latest.sh]
+    - [iptables, -I, INPUT, 2, -p, udp, --dport, 1900, -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, udp, --dport, 10001, -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, udp, --destination-port, "5656:5699", -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 27117, -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 6789, -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8843, -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8880, -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8443, -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8080, -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, udp, --dport, 3478, -j, ACCEPT]
+    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 80, -j, ACCEPT]
+    - 'iptables-save >  /etc/iptables/rules.v4'
+
+# Documentations says an array of an array of strings, hence the [] and , between each command. Can be a full command between quotes but against docs
+
+# https://cloudinit.readthedocs.io/en/latest/topics/modules.html
+# https://docs.microsoft.com/en-us/azure/virtual-machines/linux/using-cloud-init
+# https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-Ubuntu-16-04-18-04-18-10-19-04-and-19-10-/ccbc7530-dd61-40a7-82ec-22b17f027776
+# https://help.ubnt.com/hc/en-us/articles/218506997-UniFi-Ports-Used
