@@ -8,7 +8,7 @@ Oracle uses "stacks" that automates the provisioning of an environment using Ter
 
 ## Configuration
 1) Download the .zip file.
-2) Register an account on Oracle Cloud. Credit card information is required for verification.
+2) Register an account on Oracle Cloud.
     https://myservices.us.oraclecloud.com/mycloud/signup
 3) Once signed into Oracle Cloud, navigate to the Menu>Resource Manager>Stacks
 4) Click "Create Stack" <br />![alt text](./images/stacks.jpg)
