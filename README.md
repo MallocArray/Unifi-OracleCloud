@@ -4,7 +4,7 @@ Oracle Cloud Free Tier offer includes Always Free resources, such as 2 VMs with 
 
 https://www.oracle.com/cloud/free/
 
-Oracle uses "stacks" that automates the provisioning of an environment using Terraform.  Using only a single zip file, a Unifi Controller can be provisioned quickly with very little interraction.
+Oracle uses "stacks" that automates the provisioning of an environment using Terraform.  Using only a single zip file, a Unifi Controller can be provisioned quickly with very little interaction.
 
 ## Configuration
 1) Download the .zip file.
@@ -29,6 +29,7 @@ The zip file contains one or more .TF files with Terraform instructions.  These 
 * Internet Gateway
 * Network Security Groups with required ports for Unifi Controller
 * Computer Instance sized for Always Free running Ubuntu 16.04 with public IP address
+* Packages updated on first boot and Unifi Controller installed using [GlennR's Installation Script](https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-Ubuntu-16-04-18-04-18-10-19-04-and-19-10-/ccbc7530-dd61-40a7-82ec-22b17f027776)
 
 ## Advanced Configuration
 A static IP address can be reserved to keep the same address even if the original instance is deleted or recreated.  This is not done automatically by the Terraform file, but can configured after creation
@@ -45,4 +46,10 @@ Instances created using Stacks can easily be destroyed to remove all associated 
 
 Once completed, return to Stacks to use the Apply option to create a new instance with the original configuration. It is not necessary to **Delete Stack**
 
-**Note** If a Reserved IP address as assigned to the Instance, it may need to be removed from the VM prior to Detroying the stack. Since it was not created as part of the Stack, it will not be removed when Destroying the stack.
+**Note** If a Reserved IP address as assigned to the Instance, it may need to be removed from the VM prior to Destroying the stack. Since it was not created as part of the Stack, it will not be removed when Destroying the stack.
+
+# Future To-Do List
+* Modify the [GCP Unifi Controller Startup Script](https://metis.fi/en/2018/02/gcp-unifi-code/) created by PetriR
+    * ~~Support Oracle Cloud metadata~~ Completed
+    * Support Ubuntu instead of Debian (Debian is not offered in Oracle)
+    * Research simple way to copy backup files to Oracle Block Storage included in free tier
