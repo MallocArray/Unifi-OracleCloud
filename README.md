@@ -11,8 +11,8 @@ Oracle uses "stacks" that automates the provisioning of an environment using Ter
 2) Register an account on Oracle Cloud.
     https://myservices.us.oraclecloud.com/mycloud/signup
 3) Once signed into Oracle Cloud, navigate to the Menu>Resource Manager>Stacks
-4) Click "Create Stack" <br />![alt text](./images/stacks.jpg)
-5) Drag or Browse the zip file to the Terraform Configuration section. Provide a name for the stack if desired or keep the auto-generated name.  Change the Terraform version to 0.12.x then click Next <br />![alt text](./images/create-stack.jpg)
+4) Click "Create Stack" <br />![alt text](./images/stacks.jpg){: .shadow}
+5) Drag or Browse the zip file to the Terraform Configuration section. Provide a name for the stack if desired or keep the auto-generated name.  Change the Terraform version to 0.12.x then click Next <br />![alt text](./images/create-stack.jpg){: .shadow}
 6) Review the variables and modify if needed. Click Next, then Create
 7) In the list of Stacks, click on the name of the newly created Stack.  Click on **Terraform Actions** then **Apply** followed by Apply.
 8) In a few minutes, the Stacks job will complete and show the public IP address and URL to access the controller. It may take 15 minutes or more to complete the installation of the Unifi software.
@@ -30,6 +30,7 @@ The zip file contains one or more .TF files with Terraform instructions.  These 
 * Network Security Groups with required ports for Unifi Controller
 * Computer Instance sized for Always Free running Ubuntu 16.04 with public IP address
 * Packages updated on first boot and Unifi Controller installed using [GlennR's Installation Script](https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-Ubuntu-16-04-18-04-18-10-19-04-and-19-10-/ccbc7530-dd61-40a7-82ec-22b17f027776)
+* iptables firewall rules added and saved for future reboots
 
 ## SSH Access to Instance
 To enable SSH to the Instance, follow the Oracle guide on [Managing Key Pair on Linux Instances](https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingkeypairs.htm?Highlight=ssh)
@@ -42,14 +43,14 @@ Additional information can be found on the Oracle Support Page under [Instance C
 A static IP address can be reserved to keep the same address even if the original instance is deleted or recreated.  This is not done automatically by the Terraform file, but can configured after creation
 
 1) Navigate to Menu>Instances and select the Unifi controller instance name. (Ensure Compartment on the left side is changed to "unificontroller")
-2) Scroll down to "Attached VNICs" under Resources on the left side and click on the Primary VNIC name <br />![alt text](./images/attached-vnics.jpg)
-3) Scroll down to "IP Addresses" under Resources on the left side and click the "..." icon to the far right and select Edit <br />![alt text](./images/edit-ip.jpg)
+2) Scroll down to "Attached VNICs" under Resources on the left side and click on the Primary VNIC name <br />![alt text](./images/attached-vnics.jpg){: .shadow}
+3) Scroll down to "IP Addresses" under Resources on the left side and click the "..." icon to the far right and select Edit <br />![alt text](./images/edit-ip.jpg){: .shadow}
 4) Change **Public IP Type** to "No Public IP" and click Update. Then click Edit again and select **Reserved Public IP** and "Create a New Reserved Public IP" or select a previously created entry. Click Update.
 
 ## Deleting or re-creating an instance
 Instances created using Stacks can easily be destroyed to remove all associated items and optionally recreate them
 1) Navigate to Menu>Resource Manager>Stacks and select the previously used Stack name
-2) Select **Terraform Actions** and Destroy.  Confirm by clicking Destroy again. <br /> ![alt text](./images/destroy-stack.jpg)
+2) Select **Terraform Actions** and Destroy.  Confirm by clicking Destroy again. <br /> ![alt text](./images/destroy-stack.jpg){: .shadow}
 
 Once completed, return to Stacks to use the Apply option to create a new instance with the original configuration. It is not necessary to **Delete Stack**
 
