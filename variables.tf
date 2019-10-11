@@ -20,6 +20,22 @@ variable "project_name" {
   default = "unificontroller"
 }
 
+variable "instance_shape" {
+  default = "VM.Standard.E2.1.Micro"
+  description = "Shape name found: https://docs.cloud.oracle.com/iaas/Content/Compute/References/computeshapes.htm"
+}
+
+variable "operating_system" {
+  default = "Canonical Ubuntu"
+  description = "Full name of OS without version number such as 'Canonical Ubuntu' or 'Oracle Linux'"
+}
+
+variable "operating_system_version" {
+  default = "18.04"
+  description = "Version name of the specified OS, such as '18.04' or '7.7'"
+}
+
+
 resource "random_id" "unificontroller_id" {
   byte_length = 2
 }

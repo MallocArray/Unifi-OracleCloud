@@ -11,7 +11,7 @@ resource "oci_identity_compartment" "unificontroller_compartment" {
 resource "oci_core_instance" "unificontroller-instance" {
   availability_domain = "${data.oci_identity_availability_domain.unificontroller-AD.name}"
   compartment_id      = "${oci_identity_compartment.unificontroller_compartment.id}"
-  shape               = "${local.instance_shape}"
+  shape               = "${var.instance_shape}"
   display_name        = "${var.project_name}-${random_id.unificontroller_id.dec}"
 
   create_vnic_details {
@@ -21,7 +21,8 @@ resource "oci_core_instance" "unificontroller-instance" {
 
   source_details {
     source_type = "image"
-    source_id   = "${local.images[var.region]}"
+    #source_id   = "${local.images[var.region]}"
+    source_id   = "${lookup(data.oci_core_images.supported_shape_images.images[0], "id")}"
   }
 
   metadata = {
@@ -35,32 +36,6 @@ resource "oci_core_instance" "unificontroller-instance" {
 
 }
 
-// https://docs.cloud.oracle.com/iaas/images/image/1ce54939-85b9-4dd2-9fc2-36bbe3b44613/
-// Canonical-Ubuntu-18.04-2019.09.18-0
-locals  {
-  images = {
-    ap-mumbai-1    =	"ocid1.image.oc1.ap-mumbai-1.aaaaaaaatimdje2ynbis3vhs7ifu6gc46enpkr4jqefeov7dhhywy3qdwuoa"
-    ap-seoul-1     =	"ocid1.image.oc1.ap-seoul-1.aaaaaaaal4ilrxr2urapzigeemrodzitumfwg6f4mjdwbnjv2dl7d3ufmpla"
-    ap-sydney-1    =	"ocid1.image.oc1.ap-sydney-1.aaaaaaaapqr3lht5gxmvx33c3srdwjihxw7xlzjx53zz6z6aiy6iddbyhojq"
-    ap-tokyo-1     =	"ocid1.image.oc1.ap-tokyo-1.aaaaaaaas7mayq334jx6wwo5mvsacsrhqltqu4oexeygb6sx24zvgjy63haq"
-    ca-toronto-1   =	"ocid1.image.oc1.ca-toronto-1.aaaaaaaay4q4rliuwpqdd3zy33wb42k5g3pbgrrtrwfrqzgazbu4rma5jtza"
-    eu-frankfurt-1 =	"ocid1.image.oc1.eu-frankfurt-1.aaaaaaaayvqumqej62xz6rm7q4o2jdpjgvbn3yxa6zzybmmqop2ueksachzq"
-    eu-zurich-1    =	"ocid1.image.oc1.eu-zurich-1.aaaaaaaax3upi7v7o5xqekromo5c3awp65rfzv2kbqkjupddgusc72l4ospa"
-    sa-saopaulo-1  =	"ocid1.image.oc1.sa-saopaulo-1.aaaaaaaarna7nv5emly2akcd2wqsm2zgkqmrmc5w5lctwjwn5232annhiaca"
-    uk-london-1    =	"ocid1.image.oc1.uk-london-1.aaaaaaaaxkewl2rhku6s72n6b76ng7g6tzuencdgle7iemmll53ywzjz6mea"
-    us-ashburn-1   =	"ocid1.image.oc1.iad.aaaaaaaap7b6qyutg6lphvxjqspbielyxavfxfynaqtdxudr3feb62nsw6jq"
-    us-langley-1   =	"ocid1.image.oc2.us-langley-1.aaaaaaaaa6hxzk7abxnlzn6ivunvw6vthoz4hc7wdcwoyifcjroi5zgluxwa"
-    us-luke-1      =	"ocid1.image.oc2.us-luke-1.aaaaaaaalp25othpiznso7al4za2sw5oc3lo65y72bh2dv34depjsz4wdd5q"
-    us-phoenix-1   =	"ocid1.image.oc1.phx.aaaaaaaa5rdkagpkgrn33wu5cz63unpwcsvka6ofen7nqsan4safhuufwb5q"
-  }
-
-  instance_shape = "VM.Standard.E2.1.Micro"
-
-  availability_domain = 1
-
-  num_nodes = 1
-
-}
 
 data "oci_identity_availability_domain" "unificontroller-AD" {
     #Required
@@ -68,6 +43,37 @@ data "oci_identity_availability_domain" "unificontroller-AD" {
     #Optional
     ad_number = "${var.availability_domain}"
 }
+
+
+# Gets a list of images within a tenancy with the specified criteria
+data "oci_core_images" "supported_shape_images" {
+  compartment_id = "${var.compartment_ocid}"
+
+  # Uncomment below to filter images that support a specific instance shape
+  #shape                    = "VM.Standard.E2.1.Micro"
+  shape                     = "${var.instance_shape}"
+
+  # Uncomment below to filter images that are a specific OS
+  operating_system         = "${var.operating_system}"
+
+  # Uncomment below to filter images that are a specific OS version
+  operating_system_version = "${var.operating_system_version}"
+
+  # Uncomment below to sort images by creation time
+  sort_by                 = "TIMECREATED"
+  # Default sort order for TIMECREATED is descending (DESC)
+  #sort_order              = "ASC"
+
+  state                   = "AVAILABLE"
+
+  # Uncomment below to sort images by display name, display name sort order is case-sensitive
+  #sort_by                 = "DISPLAYNAME"
+  # Default sort order for DISPLAYNAME is ascending (ASC)
+  #sort_order              = "DESC"
+}
+
+# Hints to getting the list of available images to always get the most recent
+# https://github.com/terraform-providers/terraform-provider-oci/blob/master/examples/compute/image/image.tf
 
 # https://www.exitas.be/blog/assigning-reserved-public-ips-to-guests-with-oracle-cloud-and-terraform/
 # Great guide to creating and assigning a Reserved public IP but destroys it when destroying everything else
