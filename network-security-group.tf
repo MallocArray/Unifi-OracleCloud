@@ -45,8 +45,8 @@ resource "oci_core_network_security_group_security_rule" "unificontroller_networ
     source_type = "CIDR_BLOCK"
     tcp_options {
         destination_port_range {
-            max = "8443"
-            min = "8443"
+            max = "8880"
+            min = "8880"
         }
     }
 }
