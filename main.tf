@@ -21,7 +21,6 @@ resource "oci_core_instance" "unificontroller-instance" {
 
   source_details {
     source_type = "image"
-    #source_id   = "${local.images[var.region]}"
     source_id   = "${lookup(data.oci_core_images.supported_shape_images.images[0], "id")}"
   }
 
@@ -36,14 +35,12 @@ resource "oci_core_instance" "unificontroller-instance" {
 
 }
 
-
 data "oci_identity_availability_domain" "unificontroller-AD" {
     #Required
     compartment_id = "${var.compartment_ocid}"
     #Optional
     ad_number = "${var.availability_domain}"
 }
-
 
 # Gets a list of images within a tenancy with the specified criteria
 data "oci_core_images" "supported_shape_images" {
