@@ -10,14 +10,16 @@ Oracle uses "stacks" that automates the provisioning of an environment using Ter
 1) Download the .zip file.
 2) Register an account on Oracle Cloud.
     https://myservices.us.oraclecloud.com/mycloud/signup
-3) Once signed into Oracle Cloud, navigate to the Menu>Resource Manager>Stacks
+    * Recommended: Go to Menu>Compute>Instances>Create Instance. Click on "Show Shape, Network, and Storage Options" and take note of the AD Number that is tagged with "Always Free Eligible". The process can then be cancelled. This number will be used later. <br />![Availability Domains](./images/availability-domain.jpg)
+3) Navigate to the Menu>Resource Manager>Stacks
 4) Click "Create Stack" <br />![alt text](./images/stacks.jpg)
 5) Drag or Browse the zip file to the Terraform Configuration section. Provide a name for the stack if desired or keep the auto-generated name.  Change the Terraform version to 0.12.x then click Next <br />![alt text](./images/create-stack.jpg)
 6) Review the variables and modify if needed. Click Next, then Create
-    * If in Region US West (Phoenix), change availability_zone to 2
-    * For other regions, or for errors about shape not available, start creating a Computer Instance manually to see which Availability Zone is listed as Always Free Eligible.
+    * Enter/Verify the Availability Domain number in the list of variables.
 7) In the list of Stacks, click on the name of the newly created Stack.  Click on **Terraform Actions** then **Apply** followed by Apply.
 8) In a few minutes, the Stacks job will complete and show the public IP address and URL to access the controller. It may take 15 minutes or more to complete the installation of the Unifi software.
+    * If the process encounters an error stating "shape VM.Standard.E2.1.Micro not found", verify the Availability Domain that is Always Free Eligible for your region, or try a different number 1-3.
+    * If the process encounters an error stating "Out of host capacity", your Region does not currently have available resources for Always Free instances. In the Oracle Forums regarding this error, they recommend trying again later as capacity is always being added.
 9) Open the URL to the controller web interface and configure or restore a backup file.  If using a DNS name, update the entry to reflect the new IP address.
 
 **Note**: When navigating around the Oracle interface, make sure to change the Compartment option on the left side to "unificontroller" to view the newly created objects. To view the Stacks, change the Compartment back to root
@@ -56,10 +58,10 @@ Instances created using Stacks can easily be destroyed to remove all associated 
 
 Once completed, return to Stacks to use the Apply option to create a new instance with the original configuration. It is not necessary to **Delete Stack**
 
-**Note** If a Reserved IP address as assigned to the Instance, it may need to be removed from the VM prior to Destroying the stack. Since it was not created as part of the Stack, it will not be removed when Destroying the stack.
+**Note** If a Reserved IP address as assigned to the Instance, it will need to be removed from the VM prior to Destroying the stack. Since it was not created as part of the Stack, it will not be removed when Destroying the stack.
 
 # Future To-Do List
 * Modify the [GCP Unifi Controller Startup Script](https://metis.fi/en/2018/02/gcp-unifi-code/) created by PetriR
     * ~~Support Oracle Cloud metadata~~ Completed
-    * Support Ubuntu instead of Debian (Debian is not offered in Oracle)
-    * Research simple way to copy backup files to Oracle Block Storage included in free tier
+    * Support Ubuntu instead of Debian (Debian is not offered in Oracle) (In Process)
+    * Research simple way to copy backup files to Oracle Block Storage included in free tier (In Process)
