@@ -10,15 +10,17 @@ Oracle uses "stacks" that automates the provisioning of an environment using Ter
 1) Download the .zip file.
 2) Register an account on Oracle Cloud.
     https://myservices.us.oraclecloud.com/mycloud/signup
-    * Recommended: Go to Menu>Compute>Instances>Create Instance. Click on "Show Shape, Network, and Storage Options" and take note of the AD Number that is tagged with "Always Free Eligible". The process can then be cancelled. This number will be used later. <br />![Availability Domains](./images/availability-domain.jpg)
-3) Navigate to Menu>Object Storage>Object Storage>Create Bucket. Give the bucket a name, such as "unifibackup". This will be used to store backup files outside of the VM Instance.
-4) Navigate to the Menu>Resource Manager>Stacks
+    * Recommended: Go to Menu>Compute>Instances>Create Instance. Click on "Edit" on the Placement panel and take note of the Availability domain number that is tagged with "Always Free Eligible". The process can then be cancelled. This number will be used later. (At this time, Ampere A1 can be created in any AD) <br />![Availability Domains](./images/availability-domain.jpg)
+3) Navigate to Menu>Storage>Object Storage & Archive>Buckets>Create Bucket. Give the bucket a name, such as "unifibackup". This will be used to store backup files outside of the VM Instance.
+4) Navigate to the Menu>Developer Services>Resource Manager>Stacks
 5) Click "Create Stack" <br />![alt text](./images/stacks.jpg)
-6) Drag or Browse the zip file to the Terraform Configuration section. Provide a name for the stack if desired or keep the auto-generated name.  Change the Terraform version to 0.12.x then click Next <br />![alt text](./images/create-stack.jpg)
+6) Leave the default option of "My Configuration". Change the "Terraform configuration source" to ".Zip file", then drag or Browse the zip file to the Stack Configuration section. Provide a name for the stack if desired or keep the auto-generated name.  Leave the default Terraform version as 1.0.x then click Next <br />![alt text](./images/create-stack.jpg)
 7) Review the variables and modify if needed. Click Next, then Create
     * Enter/Verify the Availability Domain number in the list of variables.
     * Enter the name of the storage bucket created earlier
-8) In the list of Stacks, click on the name of the newly created Stack.  Click on **Terraform Actions** then **Apply** followed by Apply.
+    * Defaults to an Ampere ARM based instance, or change to VM.Standard.E2.1.Micro for an Intel based instance with lower CPU/Memory allowance for Free Tier
+8) On the final Create page, check the box to "Run Apply"
+    * Alternatively, in the list of Stacks, click on the name of the newly created Stack.  Click on **Apply** followed by Apply.
 9) In a few minutes, the Stacks job will complete and show the public IP address and URL to access the controller. It may take 15 minutes or more to complete the installation of the Unifi software.
     * If the process encounters an error stating "shape VM.Standard.E2.1.Micro not found", verify the Availability Domain that is Always Free Eligible for your region, or try a different number 1-3.
     * If the process encounters an error stating "Out of host capacity", your Region does not currently have available resources for Always Free instances. In the Oracle Forums regarding this error, they recommend trying again later as capacity is always being added.
@@ -58,17 +60,17 @@ Additional information can be found on the Oracle Support Page under [Instance C
 # Static IP Reservation
 A static IP address can be reserved to keep the same address even if the original instance is deleted or recreated.  This is not done automatically by the Terraform file, but can configured after creation
 
-1) Navigate to Menu>Instances and select the Unifi controller instance name. (Ensure Compartment on the left side is changed to "unificontroller")
+1) Navigate to Menu>Compute>Instances and select the Unifi controller instance name. (Ensure Compartment on the left side is changed to "unificontroller")
 2) Scroll down to "Attached VNICs" under Resources on the left side and click on the Primary VNIC name <br />![alt text](./images/attached-vnics.jpg)
-3) Scroll down to "IP Addresses" under Resources on the left side and click the "..." icon to the far right and select Edit <br />![alt text](./images/edit-ip.jpg)
+3) Scroll down to "IPv4 Addresses" under Resources on the left side and click the "..." icon to the far right and select Edit <br />![alt text](./images/edit-ip.jpg)
 4) Change **Public IP Type** to "No Public IP" and click Update. Then click Edit again and select **Reserved Public IP** and "Create a New Reserved Public IP" or select a previously created entry. Click Update.
 
 # Deleting or re-creating an instance
 Instances created using Stacks can easily be destroyed to remove all associated items and optionally recreate them
 1) Navigate to Menu>Resource Manager>Stacks and select the previously used Stack name
-2) Select **Terraform Actions** and Destroy.  Confirm by clicking Destroy again. <br /> ![alt text](./images/destroy-stack.jpg)
+2) Select **Destroy**.  Confirm by clicking Destroy again. <br /> ![alt text](./images/destroy-stack.jpg)
 
-Once completed, return to Stacks to use the Apply option to create a new instance with the original configuration. It is not necessary to **Delete Stack**
+Once completed, return to Stacks to use the Apply option to create a new instance with the original configuration. It is not necessary to **Delete Stack** unless the stack configuration is changing.
 
 **Note** If a Reserved IP address as assigned to the Instance, it will need to be removed from the VM prior to Destroying the stack. Since it was not created as part of the Stack, it will not be removed when Destroying the stack.
 
