@@ -126,6 +126,21 @@ resource "oci_core_network_security_group_security_rule" "unificontroller_networ
     }
 }
 
+resource "oci_core_network_security_group_security_rule" "unificontroller_network_security_group_security_rule_5514" {
+    network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
+    direction = "INGRESS"
+    protocol = "17"
+    description = "Port used for remote syslog capture"
+    source   = "0.0.0.0/0"
+    source_type = "CIDR_BLOCK"
+    udp_options {
+        destination_port_range {
+            max = "5514"
+            min = "5514"
+        }
+    }
+}
+
 resource "oci_core_network_security_group_security_rule" "unificontroller_network_security_group_security_rule_5656" {
     network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
     direction = "INGRESS"

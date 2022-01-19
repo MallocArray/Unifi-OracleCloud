@@ -35,8 +35,23 @@ variable "project_name" {
 }
 
 variable "instance_shape" {
-  default = "VM.Standard.E2.1.Micro"
+  default = "VM.Standard.A1.Flex"
   description = "Shape Reference: https://docs.cloud.oracle.com/iaas/Content/Compute/References/computeshapes.htm"
+}
+
+# variable "instance_shape_config_baseline_ocpu_utilization" {
+#   default = 4
+#   description = "Unknown utilization variable"
+# }
+
+variable "instance_shape_config_memory_in_gbs" {
+  default = 6
+  description = "RAM GB"
+}
+
+variable "instance_shape_config_ocpus" {
+  default = 2
+  description = "oCPUs"
 }
 
 variable "operating_system" {
@@ -45,7 +60,7 @@ variable "operating_system" {
 }
 
 variable "operating_system_version" {
-  default = "18.04"
+  default = "20.04"
   description = "Version name of the specified OS, such as '18.04'"
 }
 

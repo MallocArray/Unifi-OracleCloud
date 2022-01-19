@@ -47,6 +47,12 @@ resource "oci_core_instance" "unificontroller_instance" {
   compartment_id      = "${oci_identity_compartment.unificontroller_compartment.id}"
   shape               = "${var.instance_shape}"
   display_name        = "${var.project_name}-${random_id.unificontroller_id.dec}"
+  shape_config {
+    #Optional
+    # baseline_ocpu_utilization = var.instance_shape_config_baseline_ocpu_utilization
+    memory_in_gbs = var.instance_shape_config_memory_in_gbs
+    ocpus = var.instance_shape_config_ocpus
+  }
 
   create_vnic_details {
     subnet_id        = "${oci_core_subnet.unificontrollerSubnet.id}"
