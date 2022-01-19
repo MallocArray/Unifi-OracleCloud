@@ -1,9 +1,9 @@
 output "instance_public_ip" {
-  value = "${oci_core_instance.unificontroller-instance.public_ip}"
+  value = "${oci_core_instance.unificontroller_instance.public_ip}"
   }
 
 output "controller_public_url" {
-  value = "${format("https://%s:8443", oci_core_instance.unificontroller-instance.public_ip)}"
+  value = "${format("https://%s:8443", oci_core_instance.unificontroller_instance.public_ip)}"
 }
 
 output "comments" {

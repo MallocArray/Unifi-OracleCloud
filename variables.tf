@@ -1,17 +1,34 @@
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-#
-
-variable "compartment_ocid" {}
-
 variable "availability_domain" {
   default = 1
-  description = "Always Free Eligible Region 'US East (Ashburn)' = 1. Region 'US West (Phoenix)' = 2. Other regions, start creating an instance manually to find the Always Free Eligible domain"
+  description = "If errors about 'shape not found', try 2 or 3.  See README for more information"
 }
 
 variable "ssh_public_key" {
   default = ""
 }
+
+# Variables for PetriR Script
+variable "bucket_name" {
+  default = "unifibackup"
+  description = "Name of the Oracle Storage Bucket created previously"
+}
+
+variable "dns_name" {
+  default = ""
+  description = "DNS name for the public IP assigned."
+}
+
+variable "timezone" {
+  default = ""
+  description="Example America/Chicago"
+}
+
+variable "ddns_url" {
+  default=""
+  description = "URL to update Dynamic DNS entry such as http://freedns.afraid.org/dynamic/update.php?xxxdynamicTokenxxx"
+}
+
+# End of PetriR script variables
 
 variable "project_name" {
   default = "unificontroller"
@@ -19,7 +36,7 @@ variable "project_name" {
 
 variable "instance_shape" {
   default = "VM.Standard.E2.1.Micro"
-  description = "Shape name found: https://docs.cloud.oracle.com/iaas/Content/Compute/References/computeshapes.htm"
+  description = "Shape Reference: https://docs.cloud.oracle.com/iaas/Content/Compute/References/computeshapes.htm"
 }
 
 variable "operating_system" {
@@ -32,18 +49,9 @@ variable "operating_system_version" {
   description = "Version name of the specified OS, such as '18.04'"
 }
 
-
 resource "random_id" "unificontroller_id" {
   byte_length = 2
 }
 
-# Variables for PetriR Script
-# Work in progress
-
-#variable "ddns-url" {default="update.url.com"}
-
-#variable "timezone" {default="test-timezone"}
-
-#variable "dns-name" {default="test.url.com"}
-
-#variable "bucket" {default="bucket-name"}
+variable "region" {}
+variable "compartment_ocid" {}

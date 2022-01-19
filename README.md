@@ -11,16 +11,20 @@ Oracle uses "stacks" that automates the provisioning of an environment using Ter
 2) Register an account on Oracle Cloud.
     https://myservices.us.oraclecloud.com/mycloud/signup
     * Recommended: Go to Menu>Compute>Instances>Create Instance. Click on "Show Shape, Network, and Storage Options" and take note of the AD Number that is tagged with "Always Free Eligible". The process can then be cancelled. This number will be used later. <br />![Availability Domains](./images/availability-domain.jpg)
-3) Navigate to the Menu>Resource Manager>Stacks
-4) Click "Create Stack" <br />![alt text](./images/stacks.jpg)
-5) Drag or Browse the zip file to the Terraform Configuration section. Provide a name for the stack if desired or keep the auto-generated name.  Change the Terraform version to 0.12.x then click Next <br />![alt text](./images/create-stack.jpg)
-6) Review the variables and modify if needed. Click Next, then Create
+3) Navigate to Menu>Object Storage>Object Storage>Create Bucket. Give the bucket a name, such as "unifibackup". This will be used to store backup files outside of the VM Instance.
+4) Navigate to the Menu>Resource Manager>Stacks
+5) Click "Create Stack" <br />![alt text](./images/stacks.jpg)
+6) Drag or Browse the zip file to the Terraform Configuration section. Provide a name for the stack if desired or keep the auto-generated name.  Change the Terraform version to 0.12.x then click Next <br />![alt text](./images/create-stack.jpg)
+7) Review the variables and modify if needed. Click Next, then Create
     * Enter/Verify the Availability Domain number in the list of variables.
-7) In the list of Stacks, click on the name of the newly created Stack.  Click on **Terraform Actions** then **Apply** followed by Apply.
-8) In a few minutes, the Stacks job will complete and show the public IP address and URL to access the controller. It may take 15 minutes or more to complete the installation of the Unifi software.
+    * Enter the name of the storage bucket created earlier
+8) In the list of Stacks, click on the name of the newly created Stack.  Click on **Terraform Actions** then **Apply** followed by Apply.
+9) In a few minutes, the Stacks job will complete and show the public IP address and URL to access the controller. It may take 15 minutes or more to complete the installation of the Unifi software.
     * If the process encounters an error stating "shape VM.Standard.E2.1.Micro not found", verify the Availability Domain that is Always Free Eligible for your region, or try a different number 1-3.
     * If the process encounters an error stating "Out of host capacity", your Region does not currently have available resources for Always Free instances. In the Oracle Forums regarding this error, they recommend trying again later as capacity is always being added.
-9) Open the URL to the controller web interface and configure or restore a backup file.  If using a DNS name, update the entry to reflect the new IP address.
+10) Open the URL to the controller web interface and configure or restore a backup file.  If using a DNS name, update the entry to reflect the new IP address.
+11) Setup the controller or restore from a backup file
+12) Once logged into the controller, navigate to Settings>Maintenance and change the Log Level for Mgmt to **More** and click Apply. This will allow Fail2Ban to continue to operate as desired.
 
 **Note**: When navigating around the Oracle interface, make sure to change the Compartment option on the left side to "unificontroller" to view the newly created objects. To view the Stacks, change the Compartment back to root
 
@@ -32,9 +36,17 @@ The zip file contains one or more .TF files with Terraform instructions.  These 
 * Route Table
 * Internet Gateway
 * Network Security Groups with required ports for Unifi Controller
-* Computer Instance sized for Always Free running Ubuntu 16.04 with public IP address
-* Packages updated on first boot and Unifi Controller installed using [GlennR's Installation Script](https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-Ubuntu-16-04-18-04-18-10-19-04-and-19-10-/ccbc7530-dd61-40a7-82ec-22b17f027776)
+* Computer Instance sized for Always Free running Ubuntu 18.04 with public IP address
 * iptables firewall rules added and saved for future reboots
+* Packages updated on first boot and Unifi Controller installed using [GlennR's Installation Script](https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-Ubuntu-16-04-18-04-18-10-19-04-and-19-10-/ccbc7530-dd61-40a7-82ec-22b17f027776)
+* Further setup based on PetriR's script depending on variables provided such as:
+    * MongoDB Logs rotation
+    * MongoDB repair on boot
+    * lighttpd installed and configured for port 80 redirection
+    * Fail2Ban configured to block access for 1 hour after 3 failed attempts from the same IP
+    * Timezone configured
+    * Daily copy of backup files to an Oracle Storage Bucket outside of the VM
+    * Let's Encrypt SSL certificate install and renewal if DNS configured
 
 # SSH Access to Instance
 To enable SSH to the Instance, follow the Oracle guide on [Managing Key Pair on Linux Instances](https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingkeypairs.htm?Highlight=ssh)

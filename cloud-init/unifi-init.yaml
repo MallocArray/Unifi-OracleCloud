@@ -1,9 +1,12 @@
 #cloud-config
-package_update: true
-package_upgrade: true
-package_reboot_if_required: true
+#package_update: true
+#package_upgrade: true
+#package_reboot_if_required: true
 packages:
     - jq
+    - certbot
+    #- Lighttpd #Letting bash script install to also create config file at the same time
+    #- Fail2Ban
 runcmd:
     - [wget, 'https://get.glennr.nl/unifi/install/install_latest/unifi-latest.sh']
     - [chmod, +x, unifi-latest.sh]

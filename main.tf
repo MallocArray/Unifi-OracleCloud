@@ -1,6 +1,40 @@
-data "template_file" "unifi-init" {
-  template = "${file("./cloud-init/unifi-init.yaml")}"
+# data "template_file" "unifi-init" {
+#   template = "${file("./cloud-init/unifi-init.yaml")}"
+# }
+
+data "template_file" "unifi-petrir" {
+  template = "${file("./cloud-init/startup.sh")}"
+  # These don't mean anything, but they have to be defined to not cause errors
+  vars = {
+    bucket = "https://objectstorage.${var.region}.oraclecloud.com${oci_objectstorage_preauthrequest.unifi_backup_preauthenticated_request.access_uri}"
+    ddns = "${var.ddns_url}"
+    tz="${var.timezone}"
+    MONGOLOG=""
+    Status=""
+    httpd=""
+    f2b=""
+    dnsname=""
+    caroot=""
+    p12=""
+    extIP=""
+    dnsIP=""
+  }
 }
+
+# data "template_cloudinit_config" "config" {
+#   # https://ash.berlintaylor.com/writings/2017/08/reusable-terraform-modules-extending-userdata/
+#   # https://www.terraform.io/docs/providers/template/d/cloudinit_config.html
+#   part {
+#     content_type = "text/cloud-config"
+#     content = "${data.template_file.unifi-init.rendered}"
+#   }
+#   part {
+#     filename="petrir-modified.sh"
+#     content_type = "text/x-shellscript"
+#     content = "${data.template_file.unifi-petrir.rendered}"
+#   }
+# }
+
 
 resource "oci_identity_compartment" "unificontroller_compartment" {
     compartment_id = "${var.compartment_ocid}"
@@ -8,7 +42,7 @@ resource "oci_identity_compartment" "unificontroller_compartment" {
     name = "${var.project_name}"
 }
 
-resource "oci_core_instance" "unificontroller-instance" {
+resource "oci_core_instance" "unificontroller_instance" {
   availability_domain = "${data.oci_identity_availability_domain.unificontroller-AD.name}"
   compartment_id      = "${oci_identity_compartment.unificontroller_compartment.id}"
   shape               = "${var.instance_shape}"
@@ -21,19 +55,22 @@ resource "oci_core_instance" "unificontroller-instance" {
 
   source_details {
     source_type = "image"
+    #source_id   = "${local.images[var.region]}"
     source_id   = "${lookup(data.oci_core_images.supported_shape_images.images[0], "id")}"
   }
 
   metadata = {
     ssh_authorized_keys = "${var.ssh_public_key}"
-    user_data           = "${base64encode(data.template_file.unifi-init.rendered)}"
-    #ddns-url            = "${var.ddns-url}"
-    #timezone            = "${var.timezone}"
-    #dns-name            = "${var.dns-name}"
-    #bucket              = "${var.bucket}"
+    #user_data           = "${base64encode(data.template_file.unifi-init.rendered)}"
+    user_data           = "${base64encode(data.template_file.unifi-petrir.rendered)}"
+    ddns-url            = "${var.ddns_url}"
+    timezone            = "${var.timezone}"
+    dns-name            = "${var.dns_name}"
+    bucket              = "https://objectstorage.${var.region}.oraclecloud.com${oci_objectstorage_preauthrequest.unifi_backup_preauthenticated_request.access_uri}"
   }
 
 }
+
 
 data "oci_identity_availability_domain" "unificontroller-AD" {
     #Required
@@ -41,6 +78,7 @@ data "oci_identity_availability_domain" "unificontroller-AD" {
     #Optional
     ad_number = "${var.availability_domain}"
 }
+
 
 # Gets a list of images within a tenancy with the specified criteria
 data "oci_core_images" "supported_shape_images" {

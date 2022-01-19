@@ -1,27 +1,5 @@
 #! /bin/sh
 
-# Opening Firewall ports and saving configuration
-iptables -I INPUT 2 -p udp --dport 1900 -j ACCEPT
-iptables -I INPUT 2 -p udp --dport 10001 -j ACCEPT
-iptables -I INPUT 2 -p udp --destination-port "5656:5699" -j ACCEPT
-iptables -I INPUT 2 -p tcp --dport 27117 -j ACCEPT
-iptables -I INPUT 2 -p tcp --dport 6789 -j ACCEPT
-iptables -I INPUT 2 -p tcp --dport 8843 -j ACCEPT
-iptables -I INPUT 2 -p tcp --dport 8880 -j ACCEPT
-iptables -I INPUT 2 -p tcp --dport 8443 -j ACCEPT
-iptables -I INPUT 2 -p tcp --dport 8080 -j ACCEPT
-iptables -I INPUT 2 -p udp --dport 3478 -j ACCEPT
-iptables -I INPUT 2 -p tcp --dport 80 -j ACCEPT
-iptables-save >  /etc/iptables/rules.v4
-
-
-#Running GlennR's install script which also installs prequisites
-wget 'https://get.glennr.nl/unifi/install/install_latest/unifi-latest.sh'
-chmod +x unifi-latest.sh
-./unifi-latest.sh
-
-
-
 # Version 1.3.4
 # This is a modified script for UniFi Controller on Ubuntu based Oracle Cloud Instances.
 # Based on the excellent work of PetriR for GCP
@@ -29,12 +7,6 @@ chmod +x unifi-latest.sh
 # For comments and code walkthrough:  https://metis.fi/en/2018/02/gcp-unifi-code/
 #
 # (c) 2018 Petri Riihikallio Metis Oy
-
-# Install jq for parsing JSON for metadata
-apt-get update
-apt-get -qq install -y jq
-
-
 
 ###########################################################
 #
@@ -71,6 +43,16 @@ fi
 
 ###########################################################
 #
+# Turn off IPv6 for now
+#
+if [ ! -f /etc/sysctl.d/20-disableIPv6.conf ]; then
+	echo "net.ipv6.conf.all.disable_ipv6=1" > /etc/sysctl.d/20-disableIPv6.conf
+	sysctl --system > /dev/null
+	echo "IPv6 disabled"
+fi
+
+###########################################################
+#
 # Update DynDNS as early in the script as possible
 #
 ddns=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c '.["ddns-url"]')
@@ -79,6 +61,90 @@ if [ ${ddns} ]; then
 	echo "Dynamic DNS accessed"
 fi
 
+###########################################################
+#
+# Create a swap file for small memory instances and increase /run
+#
+if [ ! -f /swapfile ]; then
+	memory=$(free -m | grep "^Mem:" | tr -s " " | cut -d " " -f 2)
+	echo "${memory} megabytes of memory detected"
+	if [ -z ${memory} ] || [ "0${memory}" -lt "2048" ]; then
+		fallocate -l 2G /swapfile
+		chmod 600 /swapfile
+		mkswap /swapfile >/dev/null
+		swapon /swapfile
+		echo '/swapfile none swap sw 0 0' >> /etc/fstab
+		echo 'tmpfs /run tmpfs rw,nodev,nosuid,size=400M 0 0' >> /etc/fstab
+		mount -o remount,rw,nodev,nosuid,size=400M tmpfs /run
+		echo "Swap file created"
+	fi
+fi
+
+###########################################################
+#
+# Add backports if it doesn't exist
+#
+# Todo: Validate against Ubuntu
+
+release=$(lsb_release -a 2>/dev/null | grep "^Codename:" | cut -f 2)
+if [ ${release} ] && [ ! -f /etc/apt/sources.list.d/backports.list ]; then
+	cat > /etc/apt/sources.list.d/backports.list <<_EOF
+deb http://deb.debian.org/debian/ ${release}-backports main
+deb-src http://deb.debian.org/debian/ ${release}-backports main
+_EOF
+	echo "Backports (${release}) added to APT sources"
+fi
+
+###########################################################
+#
+# Install stuff
+#
+# Todo: Validate against Ubuntu
+
+# Required preliminiaries
+if [ ! -f /usr/share/misc/apt-upgraded-1 ]; then
+	export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn    # For CGP packages
+	curl -Lfs https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -    # For CGP packages
+	apt-get -qq update -y >/dev/null
+	DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade -y >/dev/null    # GRUB upgrades require special flags
+	rm /usr/share/misc/apt-upgraded    # Old flag file
+	touch /usr/share/misc/apt-upgraded-1
+	echo "System upgraded"
+fi
+
+# HAVEGEd is straightforward
+haveged=$(dpkg-query -W --showformat='${Status}\n' haveged 2>/dev/null)
+if [ "x${haveged}" != "xinstall ok installed" ]; then
+	if apt-get -qq install -y haveged >/dev/null; then
+		echo "Haveged installed"
+	fi
+fi
+
+
+certbot=$(dpkg-query -W --showformat='${Status}\n' certbot 2>/dev/null)
+if [ "x${certbot}" != "xinstall ok installed" ]; then
+if (apt-get -qq install -y -t ${release}-backports certbot >/dev/null) || (apt-get -qq install -y certbot >/dev/null); then
+		echo "CertBot installed"
+	fi
+fi
+
+# UniFi needs https support, custom repo and APT update first
+apt-get -qq install -y apt-transport-https >/dev/null
+unifi=$(dpkg-query -W --showformat='${Status}\n' unifi 2>/dev/null)
+if [ "x${unifi}" != "xinstall ok installed" ]; then
+	echo "deb http://www.ubnt.com/downloads/unifi/debian stable ubiquiti" > /etc/apt/sources.list.d/unifi.list
+	curl -Lfs -o /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ubnt.com/unifi/unifi-repo.gpg
+	apt-get -qq update -y >/dev/null
+
+	if apt-get -qq install -y openjdk-8-jre-headless >/dev/null; then
+		echo "Java 8 installed"
+	fi
+	if apt-get -qq install -y unifi >/dev/null; then
+		echo "Unifi installed"
+	fi
+	systemctl stop mongodb
+	systemctl disable mongodb
+fi
 
 # Lighttpd needs a config file and a reload
 httpd=$(dpkg-query -W --showformat='${Status}\n' lighttpd 2>/dev/null)
@@ -95,7 +161,6 @@ _EOF
 		echo "Lighttpd installed"
 	fi
 fi
-
 
 # Fail2Ban needs three files and a reload
 f2b=$(dpkg-query -W --showformat='${Status}\n' fail2ban 2>/dev/null)
@@ -130,7 +195,7 @@ fi
 #
 # Set the time zone
 #
-tz=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c ".timezone" | tr --delete '"')
+tz=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c ".timezone")
 if [ ${tz} ] && [ -f /usr/share/zoneinfo/${tz} ]; then
 	apt-get -qq install -y dbus >/dev/null
 	if ! systemctl start dbus; then
@@ -142,6 +207,36 @@ if [ ${tz} ] && [ -f /usr/share/zoneinfo/${tz} ]; then
 	systemctl reload-or-restart rsyslog
 fi
 
+###########################################################
+#
+# Set up unattended upgrades after 04:00 with automatic reboots
+#
+if [ ! -f /etc/apt/apt.conf.d/51unattended-upgrades-unifi ]; then
+	cat > /etc/apt/apt.conf.d/51unattended-upgrades-unifi <<_EOF
+Acquire::AllowReleaseInfoChanges "true";
+Unattended-Upgrade::Origins-Pattern {
+	"o=Debian,a=stable";
+	"c=ubiquiti";
+};
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::Automatic-Reboot "true";
+_EOF
+
+	cat > /etc/systemd/system/timers.target.wants/apt-daily-upgrade.timer <<_EOF
+[Unit]
+Description=Daily apt upgrade and clean activities
+After=apt-daily.timer
+[Timer]
+OnCalendar=4:00
+RandomizedDelaySec=30m
+Persistent=true
+[Install]
+WantedBy=timers.target
+_EOF
+	systemctl daemon-reload
+	systemctl reload-or-restart unattended-upgrades
+	echo "Unattended upgrades set up"
+fi
 
 ###########################################################
 #
@@ -191,9 +286,9 @@ fi
 #
 # Set up daily backup to a bucket after 01:00
 #
+# Todo: Find comparable solution for OCI
 
-
-bucket=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c ".bucket" | tr --delete '"')
+bucket=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c ".bucket")
 if [ ${bucket} ]; then
 	cat > /etc/systemd/system/unifi-backup.service <<_EOF
 [Unit]
@@ -202,7 +297,7 @@ After=network-online.target
 Wants=network-online.target
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/find /var/lib/unifi/backup -iname '*.unf' -exec curl -T {} $bucket \;
+ExecStart=find /var/lib/unifi/backup -iname '*.unf' -exec curl -T {} $bucket \;
 _EOF
 
 	cat > /etc/systemd/system/unifi-backup.timer <<_EOF
@@ -219,29 +314,47 @@ _EOF
 	echo "Backups to OCI Storage set up"
 fi
 
-
+###########################################################
+#
+# Adjust Java heap (advanced setup)
+#
+# xms=$(curl -fs -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/xms")
+# xmx=$(curl -fs -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/xmx")
+# if [ ${xms} ] || [ ${xmx} ]; then touch /usr/share/misc/java-heap-adjusted; fi
+#
+# if [ -e /usr/share/misc/java-heap-adjusted ]; then
+#	 if [ "0${xms}" -lt 100 ]; then xms=1024; fi
+#	 if grep -e "^\s*unifi.xms=[0-9]" /var/lib/unifi/system.properties >/dev/null; then
+#	 	sed -i -e "s/^[[:space:]]*unifi.xms=[[:digit:]]\+/unifi.xms=${xms}/" /var/lib/unifi/system.properties
+#	 else
+#	 	echo "unifi.xms=${xms}" >>/var/lib/unifi/system.properties
+#	 fi
+#	 message=" xms=${xms}"
+#
+#	 if [ "0${xmx}" -lt "${xms}" ]; then xmx=${xms}; fi
+#	 if grep -e "^\s*unifi.xmx=[0-9]" /var/lib/unifi/system.properties >/dev/null; then
+#	 	sed -i -e "s/^[[:space:]]*unifi.xmx=[[:digit:]]\+/unifi.xmx=${xmx}/" /var/lib/unifi/system.properties
+#	 else
+#	 	echo "unifi.xmx=${xmx}" >>/var/lib/unifi/system.properties
+#	 fi
+#	 message="${message} xmx=${xmx}"
+#
+#	 if [ -n "${message}" ]; then
+#	 	echo "Java heap set to:${message}"
+#	 fi
+#	 systemctl restart unifi
+# fi
 
 
 ###########################################################
 #
 # Set up Let's Encrypt
 #
-dnsname=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c '.["dns-name"]' | tr --delete '"')
-echo "DNS Name found is" $dnsname
-if [ -z $dnsname ]; then exit 0; fi
-echo "Got past the dnsname check"
-
-echo "Installing certbot"
-apt-get update
-apt-get -qq install software-properties-common
-add-apt-repository universe
-add-apt-repository -y ppa:certbot/certbot
-apt-get update
-apt-get -qq install -y certbot
-
-privkey=/etc/letsencrypt/live/$dnsname/privkey.pem
-pubcrt=/etc/letsencrypt/live/$dnsname/cert.pem
-chain=/etc/letsencrypt/live/$dnsname/chain.pem
+dnsname=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c '.["dns-name"]')
+if [ -z ${dnsname} ]; then exit 0; fi
+privkey=/etc/letsencrypt/live/${dnsname}/privkey.pem
+pubcrt=/etc/letsencrypt/live/${dnsname}/cert.pem
+chain=/etc/letsencrypt/live/${dnsname}/chain.pem
 caroot=/usr/share/misc/ca_root.pem
 
 # Write the cross signed root certificate to disk
@@ -306,7 +419,7 @@ if [ -e $privkey ] && [ -e $pubcrt ] && [ -e $chain ]; then
 	-in $pubcrt \\
 	-inkey $privkey \\
 	-CAfile $chain \\
-	-out \$p12 -passout pass:aircontrolenterprise \\
+	-out \${p12} -passout pass:aircontrolenterprise \\
 	-caname root -name unifi >/dev/null ; then
 		echo "OpenSSL export failed" >> $LOG
 		exit 1
@@ -319,13 +432,13 @@ if [ -e $privkey ] && [ -e $pubcrt ] && [ -e $chain ]; then
 	fi
 
 	if ! keytool -importkeystore \\
-	-srckeystore \$p12 \\
+	-srckeystore \${p12} \\
 	-srcstoretype pkcs12 \\
 	-srcstorepass aircontrolenterprise \\
 	-destkeystore /var/lib/unifi/keystore \\
 	-deststorepass aircontrolenterprise \\
 	-destkeypass aircontrolenterprise \\
-	-alias unifi -trustcacerts -noprompt >/dev/null; then
+	-alias unifi -trustcacerts >/dev/null; then
 		echo "KeyTool import failed" >> $LOG
 		exit 2
 	fi
@@ -338,7 +451,7 @@ if [ -e $privkey ] && [ -e $pubcrt ] && [ -e $chain ]; then
 		exit 3
 	fi
 	systemctl start unifi
-	rm -f \$p12
+	rm -f \${p12}
 	echo "Success" >> $LOG
 else
 	echo "Certificate files missing" >> $LOG
@@ -350,25 +463,26 @@ chmod a+x /etc/letsencrypt/renewal-hooks/deploy/unifi
 # Write a script to acquire the first certificate (for a systemd timer)
 cat > /usr/local/sbin/certbotrun.sh <<_EOF
 #! /bin/sh
+# Todo: Find way to read external IP
 extIP=\$(dig +short myip.opendns.com @resolver1.opendns.com)
-dnsIP=\$(getent hosts $dnsname | cut -d " " -f 1)
+dnsIP=\$(getent hosts ${dnsname} | cut -d " " -f 1)
 
 echo >> $LOG
 echo "CertBot run on \$(date)" >> $LOG
-if [ "\$extIP" = "\$dnsIP" ]; then
+if [ x\${extIP} = x\${dnsIP} ]; then
 	if [ ! -d /etc/letsencrypt/live/${dnsname} ]; then
 		systemctl stop lighttpd
 		if certbot certonly -d $dnsname --standalone --agree-tos --register-unsafely-without-email >> $LOG; then
-			echo "Received certificate for $dnsname" >> $LOG
+			echo "Received certificate for ${dnsname}" >> $LOG
 		fi
 		systemctl start lighttpd
 	fi
 	if /etc/letsencrypt/renewal-hooks/deploy/unifi; then
 		systemctl stop certbotrun.timer
-		echo "Certificate installed for $dnsname" >> $LOG
+		echo "Certificate installed for ${dnsname}" >> $LOG
 	fi
 else
-	echo "No action because $dnsname doesn't resolve to \$extIP" >> $LOG
+	echo "No action because ${dnsname} doesn't resolve to ${extIP}" >> $LOG
 fi
 _EOF
 chmod a+x /usr/local/sbin/certbotrun.sh
@@ -398,8 +512,8 @@ _EOF
 fi
 
 # Start the above
-if [ ! -d /etc/letsencrypt/live/${dnsname} ] ; then
-	if ! /usr/local/sbin/certbotrun.sh ; then
+if [ ! -d /etc/letsencrypt/live/${dnsname} ]; then
+	if ! /usr/local/sbin/certbotrun.sh; then
 		echo "Installing hourly CertBot run"
 		systemctl start certbotrun.timer
 	fi
