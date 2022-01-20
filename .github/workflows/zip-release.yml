@@ -10,4 +10,4 @@ jobs:
       with:
         type: 'zip'
         filename: 'unifi-oraclecloud.zip'
-        exclusions: '*.git*'
+        exclusions: '*.git*, unifi-oraclecloud.zip'
