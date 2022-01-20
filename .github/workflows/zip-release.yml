@@ -1,15 +1,14 @@
-name: Zip Files
-
+name: MasterDeployCI
 on:
-  release:
-    types: [published]
-
+  push:
+    branches:
+      - master
 jobs:
-  zip-files:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: papeloto/action-zip@v1
-        with:
-          files: cloud-init/ *.tf
-          dest: unifi-oraclecloud.zip
+    - uses: actions/checkout@v1
+    - name: Zip Folder
+      run: zip -r unifi-oraclecloud.zip . -x ".git/*" ".github/*"
+    - name: Release to Github
+      run: echo "Release"
