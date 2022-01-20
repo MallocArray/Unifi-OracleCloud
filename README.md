@@ -77,5 +77,5 @@ Once completed, return to Stacks to use the Apply option to create a new instanc
 # Future To-Do List
 * Modify the [GCP Unifi Controller Startup Script](https://metis.fi/en/2018/02/gcp-unifi-code/) created by PetriR
     * ~~Support Oracle Cloud metadata~~ Completed
-    * Support Ubuntu instead of Debian (Debian is not offered in Oracle) (In Process)
-    * Research simple way to copy backup files to Oracle Block Storage included in free tier (In Process)
+    * ~~Support Ubuntu instead of Debian~~ (Debian is not offered in Oracle) (Completed)
+    * ~~Research simple way to copy backup files to Oracle Block Storage included in free tier~~ (Completed)
