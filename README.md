@@ -1,6 +1,6 @@
 # Unifi Controller on Oracle Cloud Infrastructure for Free
 
-Oracle Cloud Free Tier offer includes Always Free resources, such as 2 VMs with 1 CPU and 1 GB RAM each, which is sufficient to run a Unifi Controller for a small installation with no charge and no expiration date
+Oracle Cloud Free Tier offer includes Always Free resources, such as 2 VMs with 1 CPU and 1 GB RAM each or Ampere ARM based VMs equivalent to 4 CPU and 24 GB RAM per month, which is sufficient to run a Unifi Controller for a small installation with no charge and no expiration date
 
 https://www.oracle.com/cloud/free/
 
