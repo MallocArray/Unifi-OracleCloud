@@ -46,6 +46,10 @@ then
 	PARAMETERS="$PARAMETERS --email $email"
 fi
 
+# Temporary fix for Ubuntu 22.04 arm64 as of 2022-11-06 when 'apt-get upgrade' fails
+# https://askubuntu.com/questions/1431951/grub-efi-arm64-signed-depends-grub-efi-arm64-2-06-2ubuntu7-but-2-06-2ubun
+sudo apt install apt --upgrade
+
 #Running GlennR's install script which also installs prequisites
 # https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-UniFi-Lets-Encrypt-or-UniFi-Easy-Encrypt-/ccbc7530-dd61-40a7-82ec-22b17f027776
 apt-get update; apt-get install ca-certificates wget -y
@@ -62,10 +66,6 @@ bash unifi-latest.sh $PARAMETERS
 # 	cd /usr/lib/unifi/data/backup/autobackup/
 # 	sudo wget ${bucket}autobackup.unf
 
-# # TODO See if able to mount bucket directly in file system
-# # https://blogs.oracle.com/cloud-infrastructure/post/mounting-an-object-storage-bucket-as-file-system-on-oracle-linux
-# # https://www.luxoug.org/mounting-an-oracle-cloud-object-storage-bucket-as-a-file-system-on-linux/
-# # https://www.youtube.com/watch?v=bPVuCf6ssec
 
 # 	echo "Creating backup script file"
 # 	echo '#!/bin/bash' | sudo tee ~/unifi-backup.sh

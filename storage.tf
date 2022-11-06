@@ -5,7 +5,7 @@ data "oci_objectstorage_namespace" "objectstorage_namespace" {
 
 resource "oci_objectstorage_preauthrequest" "unifi_backup_preauthenticated_request" {
     #Required
-    access_type = "AnyObjectWrite"
+    access_type = "AnyObjectReadWrite"
     bucket = "${var.bucket_name}"
     name = "Unifi_Backup"
     namespace = "${data.oci_objectstorage_namespace.objectstorage_namespace.namespace}"
