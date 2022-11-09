@@ -10,7 +10,7 @@ resource "oci_core_network_security_group_security_rule" "unificontroller_networ
     network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
     direction = "INGRESS"
     protocol = "6"
-    description = "Port used for device and controller communication"
+    description = "Port used for device and application communication"
     source   = "0.0.0.0/0"
     source_type = "CIDR_BLOCK"
     tcp_options {
@@ -85,7 +85,7 @@ resource "oci_core_network_security_group_security_rule" "unificontroller_networ
     network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
     direction = "INGRESS"
     protocol = "6"
-    description = "Port used for local-bound database communication."
+    description = "Port used for local-bound database communication"
     source   = "0.0.0.0/0"
     source_type = "CIDR_BLOCK"
     tcp_options {
@@ -186,6 +186,20 @@ resource "oci_core_network_security_group_security_rule" "unificontroller_networ
     }
 }
 
+resource "oci_core_network_security_group_security_rule" "unificontroller_network_security_group_security_rule_123" {
+    network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
+    direction = "INGRESS"
+    protocol = "17"
+    description = "Port used for NTP (date/time). Required for establishing secure communication with remote access servers."
+    source   = "0.0.0.0/0"
+    source_type = "CIDR_BLOCK"
+    udp_options {
+        destination_port_range {
+            max = "123"
+            min = "123"
+        }
+    }
+}
 resource "oci_core_network_security_group_security_rule" "unificontroller_network_security_group_security_rule_3478_egress" {
     network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
     direction = "EGRESS"
@@ -204,7 +218,7 @@ resource "oci_core_network_security_group_security_rule" "unificontroller_networ
     network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
     direction = "EGRESS"
     protocol = "17"
-    description = "Port used for Cloud Access service"
+    description = "Port used for Remote Access service"
     destination   = "0.0.0.0/0"
     udp_options {
         source_port_range {
@@ -218,7 +232,7 @@ resource "oci_core_network_security_group_security_rule" "unificontroller_networ
     network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
     direction = "EGRESS"
     protocol = "6"
-    description = "Port used for Cloud Access service"
+    description = "Port used for Remote Access service"
     destination   = "0.0.0.0/0"
     tcp_options {
         source_port_range {
@@ -232,12 +246,26 @@ resource "oci_core_network_security_group_security_rule" "unificontroller_networ
     network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
     direction = "EGRESS"
     protocol = "6"
-    description = "Port used for Cloud Access service"
+    description = "Port used for Remote Access service"
     destination   = "0.0.0.0/0"
     tcp_options {
         source_port_range {
             max = "8883"
             min = "8883"
+        }
+    }
+}
+
+resource "oci_core_network_security_group_security_rule" "unificontroller_network_security_group_security_rule_123_egress" {
+    network_security_group_id = "${oci_core_network_security_group.unificontroller_network_security_group.id}"
+    direction = "EGRESS"
+    protocol = "17"
+    description = "Port used for NTP (date/time). Required for establishing secure communication with remote access servers."
+    destination   = "0.0.0.0/0"
+    udp_options {
+        source_port_range {
+            max = "123"
+            min = "123"
         }
     }
 }

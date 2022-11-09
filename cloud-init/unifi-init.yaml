@@ -1,28 +1,215 @@
 #cloud-config
-#package_update: true
-#package_upgrade: true
-#package_reboot_if_required: true
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
 packages:
     - jq
-    - certbot
-    #- Lighttpd #Letting bash script install to also create config file at the same time
-    #- Fail2Ban
+    # - certbot
+    - ca-certificates
+    - wget
+    # Temporary fix for Ubuntu 22.04 arm64 as of 2022-11-06 when 'apt-get upgrade' fails
+    # https://askubuntu.com/questions/1431951/grub-efi-arm64-signed-depends-grub-efi-arm64-2-06-2ubuntu7-but-2-06-2ubun
+    #- apt
+
 runcmd:
-    - [wget, 'https://get.glennr.nl/unifi/install/install_latest/unifi-latest.sh']
-    - [chmod, +x, unifi-latest.sh]
-    - [./unifi-latest.sh]
-    - [iptables, -I, INPUT, 2, -p, udp, --dport, 1900, -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, udp, --dport, 10001, -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, udp, --destination-port, "5656:5699", -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 27117, -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 6789, -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8843, -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8880, -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8443, -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8080, -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, udp, --dport, 3478, -j, ACCEPT]
-    - [iptables, -I, INPUT, 2, -p, tcp, --dport, 80, -j, ACCEPT]
-    - 'iptables-save >  /etc/iptables/rules.v4'
+    # - [wget, 'https://get.glennr.nl/unifi/install/install_latest/unifi-latest.sh']
+    # - [chmod, +x, unifi-latest.sh]
+    # - [./unifi-latest.sh]
+    # TODO Consider replacing these commands with ufw https://cloufish.github.io/blog/posts/Making-Rules-For-IPTables-Firewall-With-UFW/
+    # - [iptables, -I, INPUT, 2, -p, udp, --dport, 1900, -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, udp, --dport, 10001, -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, udp, --destination-port, "5656:5699", -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, tcp, --dport, 27117, -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, tcp, --dport, 6789, -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8843, -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8880, -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8443, -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, tcp, --dport, 8080, -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, udp, --dport, 3478, -j, ACCEPT]
+    # - [iptables, -I, INPUT, 2, -p, tcp, --dport, 80, -j, ACCEPT]
+    # - 'iptables-save >  /etc/iptables/rules.v4'
+
+    # - 'ddns_url=$(curl -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/metadata | jq -c ".ddns_url" | tr --delete '"')'
+    # - 'if [ $ddns_url ]'
+    # - 'then'
+    # -   'echo "Updating Dynamic DNS"'
+    # -   'curl "$ddns_url"'
+    # - 'fi'
+
+    # Can use built-in variables or commands to expose metadata and other cloud-init information such as:
+    # https://cloudinit.readthedocs.io/en/latest/topics/instancedata.html
+    # {{ds.metadata.ddns_url }}
+    # cloud-init query ds.metadata.ddns_url
+
+    # - |
+    #     ddns_url=$(curl -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/metadata | jq -c ".ddns_url" | tr --delete '"')
+    #     if [ $ddns_url ]
+    #     then
+    #         echo "Updating Dynamic DNS in one line"
+    #         curl "$ddns_url"
+    #     fi
+
+    # Dynamic DNS Update using URL from variables stored in metadata
+    - curl $(cloud-init query ds.metadata.ddns_url)
+    # Install latest Unifi controller
+    - /usr/lib/unifi/unifi-install.sh
+    # # Unifi setup using information from variables stored in metadata
+    # - |
+    #     # Create default parameter set for the Unifi script to run automatically
+    #     PARAMETERS=" --skip"
+
+    #     # If DNS name was provided, use it when setting up Unifi
+    #     dnsname=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c '.["dns_name"]' | tr --delete '"')
+    #     if [ $dnsname ]
+    #     then
+    #         PARAMETERS="$PARAMETERS --fqdn $dnsname --retry 5"
+    #     fi
+
+    #     email=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c '.["email"]' | tr --delete '"')
+    #     if [ $email ]
+    #     then
+    #         PARAMETERS="$PARAMETERS --email $email"
+    #     fi
+
+    #     # Temporary fix for Ubuntu 22.04 arm64 as of 2022-11-06 when 'apt-get upgrade' fails
+    #     # https://askubuntu.com/questions/1431951/grub-efi-arm64-signed-depends-grub-efi-arm64-2-06-2ubuntu7-but-2-06-2ubun
+    #     # apt install apt --upgrade
+
+    #     #Running GlennR's install script which also installs prerequisites
+    #     # https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-UniFi-Lets-Encrypt-or-UniFi-Easy-Encrypt-/ccbc7530-dd61-40a7-82ec-22b17f027776
+    #     # apt-get update; apt-get install ca-certificates wget -y
+    #     # rm unifi-latest.sh &> /dev/null; wget https://get.glennr.nl/unifi/install/install_latest/unifi-latest.sh && bash unifi-latest.sh $PARAMETERS
+    #     rm unifi-latest.sh &> /dev/null
+    #     wget 'https://get.glennr.nl/unifi/install/install_latest/unifi-latest.sh'
+    #     echo "Preparing to run 'bash unifi-latest.sh $PARAMETERS'"
+    #     # bash unifi-latest.sh $PARAMETERS
+
+
+# Former method of opening firewall ports for reference
+# sudo iptables -I INPUT 2 -p udp --dport 1900 -j ACCEPT
+# sudo iptables -I INPUT 2 -p udp --dport 10001 -j ACCEPT
+# sudo iptables -I INPUT 2 -p udp --destination-port "5656:5699" -j ACCEPT
+# sudo iptables -I INPUT 2 -p tcp --dport 27117 -j ACCEPT
+# sudo iptables -I INPUT 2 -p tcp --dport 6789 -j ACCEPT
+# sudo iptables -I INPUT 2 -p tcp --dport 8843 -j ACCEPT
+# sudo iptables -I INPUT 2 -p tcp --dport 8880 -j ACCEPT
+# sudo iptables -I INPUT 2 -p tcp --dport 8443 -j ACCEPT
+# sudo iptables -I INPUT 2 -p tcp --dport 8080 -j ACCEPT
+# sudo iptables -I INPUT 2 -p udp --dport 3478 -j ACCEPT
+# sudo iptables -I INPUT 2 -p tcp --dport 80 -j ACCEPT
+# sudo iptables-save >  /etc/iptables/rules.v4
+
+write_files:
+  - content: |
+      iptables -I INPUT 2 -p udp --dport 1900 -j ACCEPT
+      iptables -I INPUT 2 -p udp --dport 10001 -j ACCEPT
+      iptables -I INPUT 2 -p udp --destination-port "5656:5699" -j ACCEPT
+      iptables -I INPUT 2 -p tcp --dport 27117 -j ACCEPT
+      iptables -I INPUT 2 -p tcp --dport 6789 -j ACCEPT
+      iptables -I INPUT 2 -p tcp --dport 8843 -j ACCEPT
+      iptables -I INPUT 2 -p tcp --dport 8880 -j ACCEPT
+      iptables -I INPUT 2 -p tcp --dport 8443 -j ACCEPT
+      iptables -I INPUT 2 -p tcp --dport 443 -j ACCEPT
+      iptables -I INPUT 2 -p tcp --dport 8080 -j ACCEPT
+      iptables -I INPUT 2 -p udp --dport 3478 -j ACCEPT
+      iptables -I INPUT 2 -p udp --dport 5514 -j ACCEPT
+      iptables -I INPUT 2 -p udp --dport 123 -j ACCEPT
+      iptables -I INPUT 2 -p tcp --dport 80 -j ACCEPT
+      iptables-save >  /etc/iptables/rules.v4
+
+      # https://help.ui.com/hc/en-us/articles/218506997-UniFi-Ports-Used
+      # If using ufw, the install script does not configure Lets Encrypt properly as it only sees the internal IP
+      # ufw allow ssh  # Remote access
+      # ufw allow 53/tcp  # Port used for DNS. This is required for Guest Portal redirection, downloading updates, and remote access
+      # ufw allow 53/udp  # Port used for DNS. This is required for Guest Portal redirection, downloading updates, and remote access
+      # ufw allow 80/tcp  # Port for verifying SSL certificate with Lets Encrypt
+      # ufw allow 3478/udp  # Port used for STUN
+      # ufw allow 5514/udp  # Port used for remote syslog capture
+      # ufw allow 8080/tcp  # Port used for device and application communication.
+      # ufw allow 443/tcp  # Port used for application GUI/API as seen in a web browser
+      # ufw allow 8443/tcp  # Port used for application GUI/API as seen in a web browser.
+      # ufw allow 8880/tcp  # Port used for HTTP portal redirection
+      # ufw allow 8843/tcp  # Port used for HTTPS portal redirection
+      # ufw allow 6789/tcp  # Port used for UniFi mobile speed test
+      # ufw allow 27117/tcp  # Port used for local-bound database communication
+      # ufw allow 5656:5699/udp  # Ports used by AP-EDU broadcasting
+      # ufw allow 10001/udp  # Port used for device discovery
+      # ufw allow 1900/udp  # Port used for "Make application discoverable on L2 network" in the UniFi Network settings
+      # ufw allow 123/udp  # Port used for NTP (date/time). Required for establishing secure communication with remote access servers
+      # # Enable UFW so script can open firewall ports automatically
+      # ufw --force enable
+
+      # Create default parameter set for the Unifi script to run automatically
+      PARAMETERS="--skip"
+
+      # If DNS name was provided, use it when setting up Unifi
+      if [ $(cloud-init query ds.metadata.dns_name) ]
+      then
+          PARAMETERS="$PARAMETERS --fqdn $(cloud-init query ds.metadata.dns_name) --retry 5"
+      fi
+
+      if [ $(cloud-init query ds.metadata.email) ]
+      then
+          PARAMETERS="$PARAMETERS --email $(cloud-init query ds.metadata.email)"
+      fi
+
+      #Running GlennR's install script which also installs prerequisites
+      # https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-UniFi-Lets-Encrypt-or-UniFi-Easy-Encrypt-/ccbc7530-dd61-40a7-82ec-22b17f027776
+      rm unifi-latest.sh &> /dev/null
+      wget 'https://get.glennr.nl/unifi/install/install_latest/unifi-latest.sh'
+      echo "Public IP appears to be $(curl https://ip.glennr.nl/ -s)"
+      echo "Preparing to run 'bash unifi-latest.sh $PARAMETERS'"
+      bash unifi-latest.sh $PARAMETERS
+    path: /usr/lib/unifi/unifi-install.sh
+    permissions: '0744'
+
+  - content: |
+      #!/bin/bash
+      curl -T $(ls /usr/lib/unifi/data/backup/autobackup/autobackup_*unf -t | head -n 1) $(cloud-init query ds.metadata.bucket)
+    path: /usr/lib/unifi/unifi-backup.sh
+    permissions: '0744'
+
+    # Upload backup file at 1:00 am every day
+  - content: |
+      0 1 * * * /usr/lib/unifi/unifi-backup.sh
+    path: /etc/crontab
+    append: true
+
+  - content: |
+        # Renews certificates for Unifi applications
+        # Create default parameter set for the Unifi script to run automatically
+        PARAMETERS=" --skip"
+
+        # If DNS name was provided, use it when setting up Unifi
+        if [ $(cloud-init query ds.metadata.dns_name) ]
+        then
+            PARAMETERS="$PARAMETERS --fqdn $(cloud-init query ds.metadata.dns_name) --retry 5"
+        fi
+
+        if [ $(cloud-init query ds.metadata.email) ]
+        then
+            PARAMETERS="$PARAMETERS --email $(cloud-init query ds.metadata.email)"
+        fi
+
+        rm unifi-easy-encrypt.sh &> /dev/null
+        wget https://get.glennr.nl/unifi/extra/unifi-easy-encrypt.sh
+        echo "Preparing to run 'bash unifi-easy-encrypt.sh $PARAMETERS'"
+        bash unifi-easy-encrypt.sh $PARAMETERS
+    path: /usr/lib/unifi/unifi-encrypt.sh
+    permissions: '0744'
+
+    # Update Lets Encrypt certificates at 1:00 am on the first day of the month, every other month
+  - content: |
+      0 1 1 1,2,4,6,8,10 * /usr/lib/unifi/unifi-encrypt.sh
+    path: /etc/crontab
+    append: true
+
+    # Update Controller at 2:00 am every Monday
+  - content: |
+      0 2 * * 1 rm unifi-update.sh &> /dev/null; wget https://get.glennr.nl/unifi/update/unifi-update.sh && bash unifi-update.sh
+    path: /etc/crontab
+    append: true
+
 
 # Documentations says an array of an array of strings, hence the [] and , between each command. Can be a full command between quotes but against docs
 
@@ -30,3 +217,7 @@ runcmd:
 # https://docs.microsoft.com/en-us/azure/virtual-machines/linux/using-cloud-init
 # https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-Ubuntu-16-04-18-04-18-10-19-04-and-19-10-/ccbc7530-dd61-40a7-82ec-22b17f027776
 # https://help.ubnt.com/hc/en-us/articles/218506997-UniFi-Ports-Used
+
+# Perform a reboot once cloud-init has completed.
+power_state:
+  mode: reboot

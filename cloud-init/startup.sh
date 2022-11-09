@@ -48,7 +48,7 @@ fi
 
 # Temporary fix for Ubuntu 22.04 arm64 as of 2022-11-06 when 'apt-get upgrade' fails
 # https://askubuntu.com/questions/1431951/grub-efi-arm64-signed-depends-grub-efi-arm64-2-06-2ubuntu7-but-2-06-2ubun
-sudo apt install apt --upgrade
+# apt install apt --upgrade
 
 #Running GlennR's install script which also installs prequisites
 # https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-UniFi-Lets-Encrypt-or-UniFi-Easy-Encrypt-/ccbc7530-dd61-40a7-82ec-22b17f027776
