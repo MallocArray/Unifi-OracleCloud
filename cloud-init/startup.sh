@@ -60,7 +60,7 @@ echo "Preparing to run 'bash unifi-latest.sh $PARAMETERS'"
 bash unifi-latest.sh $PARAMETERS
 
 
-# bucket=$(curl -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/metadata | jq -c ".bucket" | tr --delete '"')
+# bucket=$(curl -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/metadata | jq -c ".bucket_url" | tr --delete '"')
 # if [ $bucket ]; then
 # 	echo "Downloading existing backup file"
 # 	cd /usr/lib/unifi/data/backup/autobackup/
@@ -72,8 +72,8 @@ bash unifi-latest.sh $PARAMETERS
 # 	# Copy the most recent auto backup file to be named autobackup.unf
 # 	echo 'cd /usr/lib/unifi/data/backup/autobackup/' | sudo tee -a ~/unifi-backup.sh
 # 	echo 'cp $(ls autobackup_*unf -t | head -n 1) autobackup.unf' | sudo tee -a ~/unifi-backup.sh
-# 	echo 'bucket=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c ".bucket" | tr --delete '\''"'\'' )' | sudo tee -a ~/unifi-backup.sh
-# 	echo curl -T /usr/lib/unifi/data/backup/autobackup/autobackup.unf \$bucket | sudo tee -a ~/unifi-backup.sh
+# 	echo 'bucket=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c ".bucket_url" | tr --delete '\''"'\'' )' | sudo tee -a ~/unifi-backup.sh
+# 	echo curl -T /usr/lib/unifi/data/backup/autobackup/autobackup.unf \$bucket_url | sudo tee -a ~/unifi-backup.sh
 # 	sudo chmod u+x ~/unifi-backup.sh
 
 # 	echo "Scheduling weekly backups of database using cron on Sundays at 1:00 am"
@@ -252,7 +252,7 @@ bash unifi-latest.sh $PARAMETERS
 # #
 
 
-# bucket=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c ".bucket" | tr --delete '"')
+# bucket=$(curl -L http://169.254.169.254/opc/v1/instance/metadata | jq -c ".bucket_url" | tr --delete '"')
 # if [ ${bucket} ]; then
 # 	cat > /etc/systemd/system/unifi-backup.service <<_EOF
 # [Unit]

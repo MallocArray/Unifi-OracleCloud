@@ -7,10 +7,14 @@ variable "ssh_public_key" {
   default = ""
 }
 
-# Variables for PetriR Script
 variable "bucket_name" {
   default = "unifibackup"
   description = "Name of the Oracle Storage Bucket created previously"
+}
+
+variable "bucket_namespace" {
+  default = ""
+  description = "Namespace of the Oracle Storage Bucket created previously. Found under General under Bucket Information"
 }
 
 variable "dns_name" {
@@ -25,10 +29,8 @@ variable "timezone" {
 
 variable "ddns_url" {
   default=""
-  description = "URL to update Dynamic DNS entry such as http://freedns.afraid.org/dynamic/update.php?xxxdynamicTokenxxx"
+  description = "URL to update Dynamic DNS entry such as http://freedns.afraid.org/dynamic/update.php?xxxdynamicTokenxxx or https://www.duckdns.org/update?domains=xxxx&token=xxxxx"
 }
-
-# End of PetriR script variables
 
 variable "project_name" {
   default = "unificontroller"
@@ -50,7 +52,7 @@ variable "instance_shape_config_memory_in_gbs" {
 }
 
 variable "instance_shape_config_ocpus" {
-  default = 2
+  default = 1
   description = "oCPUs"
 }
 
@@ -70,3 +72,18 @@ resource "random_id" "unificontroller_id" {
 
 variable "region" {}
 variable "compartment_ocid" {}
+
+variable "email" {
+  default = ""
+  description = "E-mail address you want to use for Let's Encrypt renewal notifications."
+}
+
+variable "customer_secret_key" {
+  default = ""
+  description = "Secret Key from Profile, User Settings, Customer Secret Keys and enter the generated Secret Key"
+}
+
+variable "customer_access_key" {
+  default = ""
+  description = "Access Key from Profile, User Settings, Customer Secret Keys and enter the Access Key"
+}

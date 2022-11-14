@@ -2,25 +2,6 @@ data "template_file" "unifi-init" {
   template = "${file("./cloud-init/unifi-init.yaml")}"
 }
 
-# data "template_file" "unifi-petrir" {
-#   template = "${file("./cloud-init/startup.sh")}"
-#   # These don't mean anything, but they have to be defined to not cause errors
-#   vars = {
-#     bucket = "https://objectstorage.${var.region}.oraclecloud.com${oci_objectstorage_preauthrequest.unifi_backup_preauthenticated_request.access_uri}"
-#     ddns = "${var.ddns_url}"
-#     tz="${var.timezone}"
-#     MONGOLOG=""
-#     Status=""
-#     httpd=""
-#     f2b=""
-#     dnsname=""
-#     caroot=""
-#     p12=""
-#     extIP=""
-#     dnsIP=""
-#   }
-# }
-
 resource "oci_identity_compartment" "unificontroller_compartment" {
     compartment_id = "${var.compartment_ocid}"
     description = "Unifi Controller Compartment"
@@ -52,12 +33,16 @@ resource "oci_core_instance" "unificontroller_instance" {
   metadata = {
     ssh_authorized_keys = "${var.ssh_public_key}"
     user_data           = "${base64encode(data.template_file.unifi-init.rendered)}"
-    # user_data           = "${base64encode(data.template_file.unifi-petrir.rendered)}"
     ddns_url            = "${var.ddns_url}"
     email               = "${var.email}"
     timezone            = "${var.timezone}"
     dns_name            = "${var.dns_name}"
-    bucket              = "https://objectstorage.${var.region}.oraclecloud.com${oci_objectstorage_preauthrequest.unifi_backup_preauthenticated_request.access_uri}"
+    bucket_url          = "https://objectstorage.${var.region}.oraclecloud.com${oci_objectstorage_preauthrequest.unifi_backup_preauthenticated_request.access_uri}"
+    bucket_name         = "${var.bucket_name}"
+    bucket_namespace    = "${var.bucket_namespace}"
+    customer_secret_key = "${var.customer_secret_key}"
+    customer_access_key = "${var.customer_access_key}"
+    region              = "${var.region}"
   }
 
 }
