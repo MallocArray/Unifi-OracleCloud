@@ -9,21 +9,33 @@ packages:
     - s3fs
 
 runcmd:
+    # Set timezone if defined
+    - |
+        if [$(cloud-init query ds.metadata.timezone)]
+        then
+          timedatectl set-timezone $(cloud-init query ds.metadata.timezone)
+        fi
     # Dynamic DNS Update using URL from variables stored in metadata
     - curl $(cloud-init query ds.metadata.ddns_url)
     # Install latest Unifi controller
     - /usr/lib/unifi/unifi-install.sh
-    # If options for secret key are configured, create credential file and mount the autobackup folder using storage bucket
+    # Mount bucket as autobackup folder for storage or setup script to copy backups to bucket if configured
     - |
-        if [ $(cloud-init query ds.metadata.customer_secret_key) ]
+        if [ $(cloud-init query ds.metadata.bucket_name) ]
         then
-          echo $(cloud-init query ds.metadata.customer_access_key):$(cloud-init query ds.metadata.customer_secret_key) > /home/ubuntu/.passwd-s3fs
-          chmod 600 /home/ubuntu/.passwd-s3fs
-          bash /usr/lib/unifi/mount-bucket.sh
-          # Add to fstab so it is mounted on each reboot
-          echo "s3fs#$(cloud-init query ds.metadata.bucket_name) /var/lib/unifi/backup/autobackup fuse _netdev,allow_other,nomultipart,use_path_request_style,passwd_file=/home/ubuntu/.passwd-s3fs,url=https://$(cloud-init query ds.metadata.bucket_namespace).compat.objectstorage.$(cloud-init query ds.metadata.region).oraclecloud.com/ 0 0" | tee -a /etc/fstab
+          # If options for secret key are configured, create credential file and mount the autobackup folder using storage bucket
+          if [ $(cloud-init query ds.metadata.customer_secret_key) ]
+          then
+            echo $(cloud-init query ds.metadata.customer_access_key):$(cloud-init query ds.metadata.customer_secret_key) > /home/ubuntu/.passwd-s3fs
+            chmod 600 /home/ubuntu/.passwd-s3fs
+            bash /usr/lib/unifi/mount-bucket.sh
+            # Add to fstab so it is mounted on each reboot
+            echo "s3fs#$(cloud-init query ds.metadata.bucket_name) /var/lib/unifi/backup/autobackup fuse _netdev,allow_other,nomultipart,use_path_request_style,passwd_file=/home/ubuntu/.passwd-s3fs,url=https://$(cloud-init query ds.metadata.bucket_namespace).compat.objectstorage.$(cloud-init query ds.metadata.region).oraclecloud.com/ 0 0" | tee -a /etc/fstab
+          fi
+        else
+          # Add cron entry for daily copy of most recent backup to bucket
+          crontab -l | { cat; echo "0 1 * * * root /usr/lib/unifi/unifi-backup.sh"; } | crontab -
         fi
-
 
 write_files:
   - content: |
@@ -66,7 +78,7 @@ write_files:
       # ufw --force enable
 
       # Create default parameter set for the Unifi script to run automatically
-      PARAMETERS="--skip"
+      PARAMETERS="--skip --add-repository"
 
       # If DNS name was provided, use it when setting up Unifi
       if [ $(cloud-init query ds.metadata.dns_name) ]
@@ -83,8 +95,6 @@ write_files:
       # https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-UniFi-Lets-Encrypt-or-UniFi-Easy-Encrypt-/ccbc7530-dd61-40a7-82ec-22b17f027776
       rm unifi-latest.sh &> /dev/null
       wget 'https://get.glennr.nl/unifi/install/install_latest/unifi-latest.sh'
-      echo "Public IP appears to be $(curl https://ip.glennr.nl/ -s)"
-      echo "Preparing to run 'bash unifi-latest.sh $PARAMETERS'"
       bash unifi-latest.sh $PARAMETERS
     path: /usr/lib/unifi/unifi-install.sh
     permissions: '0744'
@@ -95,11 +105,6 @@ write_files:
     path: /usr/lib/unifi/unifi-backup.sh
     permissions: '0744'
 
-    # Upload backup file at 1:00 am every day
-  - content: |
-      0 1 * * * /usr/lib/unifi/unifi-backup.sh
-    path: /etc/crontab
-    append: true
 
   - content: |
         # Renews certificates for Unifi applications
@@ -126,13 +131,13 @@ write_files:
 
     # Update Lets Encrypt certificates at 1:00 am on the first day of the month, every other month
   - content: |
-      0 1 1 1,2,4,6,8,10 * /usr/lib/unifi/unifi-encrypt.sh
+      0 1 1 1,2,4,6,8,10 * root /usr/lib/unifi/unifi-encrypt.sh
     path: /etc/crontab
     append: true
 
     # Update Controller at 2:00 am every Monday
   - content: |
-      0 2 * * 1 rm unifi-update.sh &> /dev/null; wget https://get.glennr.nl/unifi/update/unifi-update.sh && bash unifi-update.sh
+      0 2 * * 1 root apt update && apt upgrade -y
     path: /etc/crontab
     append: true
 
@@ -146,9 +151,7 @@ write_files:
 power_state:
   mode: reboot
 
-
-# Documentations says an array of an array of strings, hence the [] and , between each command. Can be a full command between quotes but against docs
-
+# Reference Links
 # https://cloudinit.readthedocs.io/en/latest/topics/modules.html
 # https://docs.microsoft.com/en-us/azure/virtual-machines/linux/using-cloud-init
 # https://community.ui.com/questions/UniFi-Installation-Scripts-or-UniFi-Easy-Update-Script-or-Ubuntu-16-04-18-04-18-10-19-04-and-19-10-/ccbc7530-dd61-40a7-82ec-22b17f027776
