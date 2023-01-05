@@ -11,7 +11,7 @@ packages:
 runcmd:
     # Set timezone if defined
     - |
-        if [$(cloud-init query ds.metadata.timezone)]
+        if (cloud-init query ds.metadata.timezone)
         then
           timedatectl set-timezone $(cloud-init query ds.metadata.timezone)
         fi
