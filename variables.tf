@@ -34,6 +34,7 @@ variable "ddns_url" {
 
 variable "project_name" {
   default = "unificontroller"
+  description = "Alphanumeric only (No special characters like - or _). Used for the Compartment and DNS name for the VCN"
 }
 
 variable "instance_shape" {
@@ -62,8 +63,8 @@ variable "operating_system" {
 }
 
 variable "operating_system_version" {
-  default = "22.04"
-  description = "Version name of the specified OS, such as '22.04'"
+  default = "24.04"
+  description = "Version name of the specified OS, such as '24.04'"
 }
 
 resource "random_id" "unificontroller_id" {
